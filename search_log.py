@@ -6,7 +6,7 @@ from tkinter import filedialog, scrolledtext
 class LogSearchApp(TkinterDnD.Tk):
     def __init__(self):
         super().__init__()
-        self.title("Log File Keyword Search")
+        self.title("Jose Cruz Log Search Tool")
         self.geometry("800x600")
 
         # Instructions
