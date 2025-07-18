@@ -44,5 +44,7 @@ This will exported as a standalone Windows EXE
 
 # More Feature Coming 
 -Implement an auto-updater in your Python app or launcher script
+
 -Check GitHub for new versions using their API
+
 -Download and replace files
