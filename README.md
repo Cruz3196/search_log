@@ -13,4 +13,4 @@ Go to /dist/click on the "search_log.exe" then click down raw file. Your device 
 - Search for keywords
 - Exported as a standalone Windows EXE
 
-#This project still under construction 🚧
+# This project still under construction 🚧
