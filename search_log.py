@@ -7,13 +7,13 @@ class LogSearchApp(TkinterDnD.Tk):
     def __init__(self):
         super().__init__()
         self.title("Jose Cruz Log Search Tool")
-        self.geometry("800x600")
+        self.geometry("900x650")
 
         # Instructions
-        tk.Label(self, text="📁 Drag & drop a folder or a .log/.syslog/.txt file below:").pack()
+        tk.Label(self, text="📁 Drag & drop a folder or a .log/.txt/.logcat file below:").pack()
 
         # Drag-and-drop area
-        self.drop_area = tk.Text(self, height=3, width=100, bg="#f0f0f0")
+        self.drop_area = tk.Text(self, height=3, width=100)
         self.drop_area.pack(pady=10)
         self.drop_area.drop_target_register(DND_FILES)
         self.drop_area.dnd_bind("<<Drop>>", self.handle_drop)
@@ -27,26 +27,22 @@ class LogSearchApp(TkinterDnD.Tk):
         tk.Button(self, text="Search", command=self.search_keyword).pack(pady=10)
 
         # Output area
-        self.output_area = scrolledtext.ScrolledText(self, width=200, height=30)
+        self.output_area = scrolledtext.ScrolledText(self, width=150, height=30)
         self.output_area.pack(pady=10)
 
-        # Enable Ctrl+F search in output
+        # Ctrl+F search
         self.bind_all("<Control-f>", self.open_find_window)
 
         self.dropped_path = None
 
     def handle_drop(self, event):
-        dropped = event.data.strip('{}')  # handle spaces in Windows paths
-        if os.path.isdir(dropped):
-            self.dropped_path = dropped
-            self.drop_area.delete("1.0", tk.END)
-            self.drop_area.insert(tk.END, self.dropped_path)
-        elif os.path.isfile(dropped) and dropped.lower().endswith((".log", ".syslog", ".txt")):
+        dropped = event.data.strip('{}')  # Handle Windows paths with spaces
+        if os.path.isdir(dropped) or os.path.isfile(dropped):
             self.dropped_path = dropped
             self.drop_area.delete("1.0", tk.END)
             self.drop_area.insert(tk.END, self.dropped_path)
         else:
-            self.output_area.insert(tk.END, "❌ Please drop a folder or a valid .log/.syslog/.txt file.\n")
+            self.output_area.insert(tk.END, "❌ Please drop a valid folder or supported log file.\n")
 
     def search_keyword(self):
         keyword = self.keyword_entry.get().strip()
@@ -64,14 +60,20 @@ class LogSearchApp(TkinterDnD.Tk):
         if os.path.isdir(self.dropped_path):
             for root, _, files in os.walk(self.dropped_path):
                 for file in files:
-                    if file.lower().endswith((".log", ".syslog", ".txt")):
+                    if self.is_supported_log(file):
                         file_path = os.path.join(root, file)
                         matched |= self.search_file(file_path, keyword)
-        elif os.path.isfile(self.dropped_path):
+        elif os.path.isfile(self.dropped_path) and self.is_supported_log(self.dropped_path):
             matched |= self.search_file(self.dropped_path, keyword)
 
         if not matched:
             self.output_area.insert(tk.END, "✅ No matches found.\n")
+
+    def is_supported_log(self, filename):
+        supported_exts = (".log", ".syslog", ".txt", ".logcat")
+        name_keywords = ("cv5", "android", "qnx")
+        filename_lower = filename.lower()
+        return filename_lower.endswith(supported_exts) or any(k in filename_lower for k in name_keywords)
 
     def search_file(self, file_path, keyword):
         matched = False
