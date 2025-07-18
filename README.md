@@ -7,8 +7,10 @@ A simple drag-and-drop desktop app to search for keywords inside `.log` and `.tx
 Go to /dist/click on the "search_log.exe" then click down raw file. Your device will down the application 
 
 
-## 🔧 How to use 
+# 🔧 How to use 
 - Download and extract XMM folders and Sys log files.
-- Drag and drop files (Sys file individual) or folders (XMM folder)
+- Drag and drop file (Sys file individual) or folder (XMM folder)
 - Search for keywords
 - Exported as a standalone Windows EXE
+
+#This project still under construction 🚧
