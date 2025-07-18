@@ -13,3 +13,4 @@ This will exported as a standalone Windows EXE
 - Download and extract 
 - Drag and drop file or folder
 - Search for keywords
+- Control F feature available, will prompt at the bottom of the application
