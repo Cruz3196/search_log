@@ -10,11 +10,16 @@ This will exported as a standalone Windows EXE
 
 
 # How to use 🔧 
-- Download and extract 
+- Download and extract
 - Drag and drop file or folder
 
 <img width="1905" height="1002" alt="documentation2" src="https://github.com/user-attachments/assets/2a6253bd-d66d-4e1e-8c96-ac40c44663e2" />
 
 
 - Search for keywords
+
+
+ <img width="1910" height="1001" alt="documentation3" src="https://github.com/user-attachments/assets/9e44ad9d-fda0-4e73-a62c-bcbbc1865d76" />
+
+
 - Control F feature available, will prompt at the bottom of the application
