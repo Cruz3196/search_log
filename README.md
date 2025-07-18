@@ -10,6 +10,6 @@ This will exported as a standalone Windows EXE
 
 
 # How to use 🔧 
-- Download and extract XMM folders and Sys log files.
-- Drag and drop file (Sys file individual) or folder (XMM folder)
+- Download and extract 
+- Drag and drop file or folder
 - Search for keywords
