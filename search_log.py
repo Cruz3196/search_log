@@ -1,105 +1,158 @@
 import os
 import tkinter as tk
-from tkinter import filedialog, messagebox
 from tkinterdnd2 import DND_FILES, TkinterDnD
-
+from tkinter import filedialog, scrolledtext
 
 class LogSearchApp(TkinterDnD.Tk):
     def __init__(self):
         super().__init__()
-        self.title("Log File Keyword Search")
+        self.title("Jose Cruz Log Search Tool")
         self.geometry("800x600")
-        self.configure(bg="white")
 
-        self.dropped_path = ""
+        # Instructions
+        tk.Label(self, text="📁 Drag & drop a folder or a .log/.syslog/.txt file below:").pack()
 
-        self.create_widgets()
+        # Drag-and-drop area
+        self.drop_area = tk.Text(self, height=3, width=100, bg="#f0f0f0")
+        self.drop_area.pack(pady=10)
+        self.drop_area.drop_target_register(DND_FILES)
+        self.drop_area.dnd_bind("<<Drop>>", self.handle_drop)
 
-    def create_widgets(self):
-        self.drop_label = tk.Label(
-            self,
-            text="📂 Drag & drop a folder or a .log/.txt/.logcat file below:",
-            bg="white",
-            font=("Segoe UI", 12),
-        )
-        self.drop_label.pack(pady=10)
-
-        self.drop_entry = tk.Entry(self, width=100)
-        self.drop_entry.pack(pady=5)
-        self.drop_entry.drop_target_register(DND_FILES)
-        self.drop_entry.dnd_bind("<<Drop>>", self.on_drop)
-
-        self.keyword_label = tk.Label(
-            self,
-            text="🔍 Enter keyword to search:",
-            bg="white",
-            font=("Segoe UI", 11),
-        )
-        self.keyword_label.pack(pady=10)
-
+        # Keyword entry
+        tk.Label(self, text="🔍 Enter keyword to search:").pack()
         self.keyword_entry = tk.Entry(self, width=50)
-        self.keyword_entry.pack()
+        self.keyword_entry.pack(pady=5)
 
-        self.search_button = tk.Button(
-            self,
-            text="Search",
-            command=self.search_logs,
-            bg="#e0e0e0",
-            font=("Segoe UI", 10),
-        )
-        self.search_button.pack(pady=10)
+        # Search button
+        tk.Button(self, text="Search", command=self.search_keyword).pack(pady=10)
 
-        self.result_text = tk.Text(self, wrap="word", font=("Consolas", 10))
-        self.result_text.pack(padx=10, pady=10, expand=True, fill="both")
+        # Output area
+        self.output_area = scrolledtext.ScrolledText(self, width=200, height=30)
+        self.output_area.pack(pady=10)
 
-    def on_drop(self, event):
-        path = event.data.strip().strip("{}")  # Removes curly braces if path has spaces
-        self.dropped_path = path
-        self.drop_entry.delete(0, tk.END)
-        self.drop_entry.insert(0, path)
+        # Enable Ctrl+F search in output
+        self.bind_all("<Control-f>", self.open_find_window)
 
-    def search_logs(self):
+        self.dropped_path = None
+
+        # For Ctrl+F navigation
+        self.find_index = 0
+        self.match_indices = []
+        self.last_find_term = ""
+
+    def handle_drop(self, event):
+        dropped = event.data.strip('{}')  # handle spaces in Windows paths
+        if os.path.isdir(dropped):
+            self.dropped_path = dropped
+            self.drop_area.delete("1.0", tk.END)
+            self.drop_area.insert(tk.END, self.dropped_path)
+        elif os.path.isfile(dropped) and dropped.lower().endswith((".log", ".syslog", ".txt")):
+            self.dropped_path = dropped
+            self.drop_area.delete("1.0", tk.END)
+            self.drop_area.insert(tk.END, self.dropped_path)
+        else:
+            self.output_area.insert(tk.END, "❌ Please drop a folder or a valid .log/.syslog/.txt file.\n")
+
+    def search_keyword(self):
         keyword = self.keyword_entry.get().strip()
-        self.result_text.delete("1.0", tk.END)
-
-        if not self.dropped_path or not keyword:
-            messagebox.showwarning("Missing Info", "Please drop a file/folder and enter a keyword.")
+        if not keyword:
+            self.output_area.insert(tk.END, "⚠️ Please enter a keyword.\n")
             return
 
+        if not self.dropped_path:
+            self.output_area.insert(tk.END, "⚠️ Please drop a folder or file.\n")
+            return
+
+        self.output_area.delete("1.0", tk.END)
         matched = False
+
         if os.path.isdir(self.dropped_path):
             for root, _, files in os.walk(self.dropped_path):
                 for file in files:
-                    if (
-                        file.lower().endswith((".log", ".txt", ".syslog"))
-                        or file.lower().startswith("logcat.")
-                        or file.lower() == "logcat"
-                    ):
+                    if file.lower().endswith((".log", ".syslog", ".txt")):
                         file_path = os.path.join(root, file)
                         matched |= self.search_file(file_path, keyword)
         elif os.path.isfile(self.dropped_path):
-            matched = self.search_file(self.dropped_path, keyword)
-        else:
-            self.result_text.insert(tk.END, "Invalid file or folder.\n")
+            matched |= self.search_file(self.dropped_path, keyword)
 
         if not matched:
-            self.result_text.insert(tk.END, "No matches found.\n")
+            self.output_area.insert(tk.END, "✅ No matches found.\n")
 
     def search_file(self, file_path, keyword):
-        found = False
+        matched = False
         try:
-            with open(file_path, "r", encoding="utf-8", errors="ignore") as file:
-                lines = file.readlines()
-                for idx, line in enumerate(lines, start=1):
+            with open(file_path, 'r', encoding='utf-8', errors='ignore') as f:
+                for line_num, line in enumerate(f, 1):
                     if keyword in line:
-                        if not found:
-                            self.result_text.insert(tk.END, f"\n--- {file_path} ---\n")
-                            found = True
-                        self.result_text.insert(tk.END, f"{idx}: {line}")
+                        matched = True
+                        self.output_area.insert(tk.END, f"[{os.path.basename(file_path)}] Line {line_num}: {line}")
         except Exception as e:
-            self.result_text.insert(tk.END, f"Error reading {file_path}: {e}\n")
-        return found
+            self.output_area.insert(tk.END, f"❌ Error reading {file_path}: {e}\n")
+        return matched
 
+    def open_find_window(self, event=None):
+        find_window = tk.Toplevel(self)
+        find_window.title("Find in Output")
+        find_window.geometry("350x100")
+        find_window.resizable(False, False)
+
+        tk.Label(find_window, text="🔎 Find:").pack(pady=3)
+        find_entry = tk.Entry(find_window, width=30)
+        find_entry.pack()
+        find_entry.focus()
+
+        nav_frame = tk.Frame(find_window)
+        nav_frame.pack(pady=5)
+
+        btn_prev = tk.Button(nav_frame, text="⏮️ Prev", command=lambda: self.navigate_match(-1))
+        btn_prev.grid(row=0, column=0, padx=5)
+
+        btn_next = tk.Button(nav_frame, text="⏭️ Next", command=lambda: self.navigate_match(1))
+        btn_next.grid(row=0, column=1, padx=5)
+
+        def find_all_matches():
+            term = find_entry.get()
+            if not term:
+                return
+
+            self.output_area.tag_remove("highlight", "1.0", tk.END)
+            self.match_indices = []
+            start_pos = "1.0"
+
+            while True:
+                start_pos = self.output_area.search(term, start_pos, stopindex=tk.END)
+                if not start_pos:
+                    break
+                end_pos = f"{start_pos}+{len(term)}c"
+                self.output_area.tag_add("highlight", start_pos, end_pos)
+                self.match_indices.append((start_pos, end_pos))
+                start_pos = end_pos
+
+            self.output_area.tag_config("highlight", background="yellow")
+            self.find_index = 0
+            self.last_find_term = term
+            if self.match_indices:
+                self.goto_match(0)
+
+        def on_enter(event):
+            find_all_matches()
+
+        find_entry.bind("<Return>", on_enter)
+
+    def goto_match(self, index):
+        if not self.match_indices:
+            return
+        start, end = self.match_indices[index]
+        self.output_area.tag_remove("active_match", "1.0", tk.END)
+        self.output_area.tag_add("active_match", start, end)
+        self.output_area.tag_config("active_match", background="orange")
+        self.output_area.see(start)
+
+    def navigate_match(self, direction):
+        if not self.match_indices:
+            return
+        self.find_index = (self.find_index + direction) % len(self.match_indices)
+        self.goto_match(self.find_index)
 
 if __name__ == "__main__":
     app = LogSearchApp()
