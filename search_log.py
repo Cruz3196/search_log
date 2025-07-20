@@ -7,7 +7,7 @@ from tkinterdnd2 import DND_FILES, TkinterDnD
 class LogSearchApp(TkinterDnD.Tk):
     def __init__(self):
         super().__init__()
-        self.title("Log File Keyword Search")
+        self.title("Cruz's Log File Search")
         self.geometry("800x600")
         self.configure(bg="white")
 
