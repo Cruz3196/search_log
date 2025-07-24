@@ -484,10 +484,10 @@
    'Files\\WindowsApps\\PythonSoftwareFoundation.Python.3.13_3.13.1520.0_x64__qbz5n2kfra8p0\\Lib\\tkinter\\ttk.py',
    'PYMODULE'),
   ('tkinterdnd2',
-   'C:\\Users\\josecruz\\Desktop\\searchlog\\env\\Lib\\site-packages\\tkinterdnd2\\__init__.py',
+   'C:\\Users\\josecruz\\AppData\\Local\\Packages\\PythonSoftwareFoundation.Python.3.13_qbz5n2kfra8p0\\LocalCache\\local-packages\\Python313\\site-packages\\tkinterdnd2\\__init__.py',
    'PYMODULE'),
   ('tkinterdnd2.TkinterDnD',
-   'C:\\Users\\josecruz\\Desktop\\searchlog\\env\\Lib\\site-packages\\tkinterdnd2\\TkinterDnD.py',
+   'C:\\Users\\josecruz\\AppData\\Local\\Packages\\PythonSoftwareFoundation.Python.3.13_qbz5n2kfra8p0\\LocalCache\\local-packages\\Python313\\site-packages\\tkinterdnd2\\TkinterDnD.py',
    'PYMODULE'),
   ('token',
    'C:\\Program '

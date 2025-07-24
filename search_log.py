@@ -24,7 +24,7 @@ class LogSearchApp(TkinterDnD.Tk):
                 'entry_fg': '#000000',
                 'button_bg': '#e1e1e1',
                 'button_fg': '#000000',
-                'text_bg': '#ffffff',
+                'text_bg': '#f0f0f0',
                 'text_fg': '#000000',
                 'highlight': '#ffff00',
                 'current_highlight': '#ffa500',
