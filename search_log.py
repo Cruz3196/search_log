@@ -19,7 +19,7 @@ class LogSearchApp(TkinterDnD.Tk):
             'light': {
                 'bg': '#f0f0f0', # Lighter background for main window
                 'fg': '#333333',
-                'select_bg': '#a8d8ff', # Softer blue for selection
+                'select_bg': '#b3e0ff', # Softer, more modern light blue for selection
                 'select_fg': '#000000',
                 'entry_bg': '#ffffff',
                 'entry_fg': '#000000',
@@ -27,11 +27,11 @@ class LogSearchApp(TkinterDnD.Tk):
                 'button_fg': '#333333',
                 'text_bg': '#ffffff',
                 'text_fg': '#000000',
-                'highlight': '#ffff99', # Softer yellow
-                'current_highlight': '#ffcc66', # Softer orange
+                'highlight': '#ffe680', # Softer yellow for highlight
+                'current_highlight': '#ffc266', # Softer orange for current highlight
                 'find_bg': '#e8e8e8',
                 'status_bg': '#e0e0e0',
-                'border_color': '#cccccc',
+                'border_color': '#dcdcdc', # Softer gray border
                 'line_num_bg': '#e8e8e8', # Background for line numbers
                 'line_num_fg': '#888888',  # Foreground for line numbers
                 'separator_bg': '#d0d0d0' # Separator line color
@@ -39,7 +39,7 @@ class LogSearchApp(TkinterDnD.Tk):
             'dark': {
                 'bg': '#2c2c2c',
                 'fg': '#e0e0e0',
-                'select_bg': '#005f9e',
+                'select_bg': '#007acc', # Deeper, richer blue for selection
                 'select_fg': '#ffffff',
                 'entry_bg': '#3a3a3a',
                 'entry_fg': '#e0e0e0',
@@ -47,8 +47,8 @@ class LogSearchApp(TkinterDnD.Tk):
                 'button_fg': '#e0e0e0',
                 'text_bg': '#1e1e1e', # Main text background (darker)
                 'text_fg': '#e0e0e0',
-                'highlight': '#808000', # Darker yellow for contrast
-                'current_highlight': '#a0522d', # Darker orange
+                'highlight': '#c0c000', # Darker olive for highlight
+                'current_highlight': '#e65100', # Deep orange for current highlight
                 'find_bg': '#383838',
                 'status_bg': '#3a3a3a',
                 'border_color': '#4a4a4a',
@@ -66,8 +66,10 @@ class LogSearchApp(TkinterDnD.Tk):
         self.search_thread = None
         self.stop_search = False
         self.ui_update_queue = queue.Queue() # Queue for thread-safe UI updates
+        self.current_font_size = 10 # Initial font size for text content
 
         self.setup_style()
+        self.create_menus() # Call create_menus before create_widgets
         self.create_widgets()
         self.bind_events()
         self.apply_theme()
@@ -117,6 +119,26 @@ class LogSearchApp(TkinterDnD.Tk):
         self.style.configure("TFrame", background=self.themes['light']['bg'])
         self.style.configure("Separator.TFrame", background=self.themes['light']['separator_bg']) # Style for separator
 
+    def create_menus(self):
+        """Creates the application's menu bar and adds the 'View' menu with zoom actions."""
+        menubar = tk.Menu(self)
+        self.config(menu=menubar)
+
+        # View Menu
+        view_menu = tk.Menu(menubar, tearoff=0)
+        menubar.add_cascade(label="View", menu=view_menu)
+
+        # Zoom In Action
+        view_menu.add_command(label="Zoom In (+)", command=self.zoom_in)
+        
+        # Zoom Out Action
+        view_menu.add_command(label="Zoom Out (-)", command=self.zoom_out)
+
+        # Separator
+        view_menu.add_separator()
+
+        # Reset Zoom Action
+        view_menu.add_command(label="Reset Zoom (100%)", command=self.reset_zoom)
 
     def configure_light_theme(self):
         """Configure styles for light theme"""
@@ -260,7 +282,7 @@ class LogSearchApp(TkinterDnD.Tk):
             width=4, # Adjust width as needed for line numbers
             padx=5,
             pady=10,
-            font=("Consolas", 10),
+            font=("Consolas", self.current_font_size), # Use current_font_size
             relief="flat",
             bd=0,
             state="disabled", # Make it read-only
@@ -275,7 +297,7 @@ class LogSearchApp(TkinterDnD.Tk):
         self.result_text = tk.Text(
             self.results_frame, 
             wrap="word", 
-            font=("Consolas", 10),
+            font=("Consolas", self.current_font_size), # Use current_font_size
             relief="flat", # Text widget itself should be flat, border handled by frame
             bd=0,
             padx=10,
@@ -334,6 +356,33 @@ class LogSearchApp(TkinterDnD.Tk):
         self.result_text.bind("<<Paste>>", lambda e: self.after(1, self._update_line_numbers))
         self.result_text.bind("<<Cut>>", lambda e: self.after(1, self._update_line_numbers))
 
+        # Bind zoom shortcuts
+        self.bind("<Control-plus>", self.zoom_in)
+        self.bind("<Control-equal>", self.zoom_in) # For keyboards where '+' is Shift+'='
+        self.bind("<Control-minus>", self.zoom_out)
+        self.bind("<Control-0>", self.reset_zoom) # Optional: Reset zoom to default
+
+    def zoom_in(self, event=None):
+        if self.current_font_size < 30: # Max font size
+            self.current_font_size += 1
+            self._update_font_size()
+
+    def zoom_out(self, event=None):
+        if self.current_font_size > 8: # Min font size
+            self.current_font_size -= 1
+            self._update_font_size()
+
+    def reset_zoom(self, event=None):
+        self.current_font_size = 10 # Default font size
+        self._update_font_size()
+
+    def _update_font_size(self):
+        """Updates the font size of the text and line number widgets."""
+        self.result_text.config(font=("Consolas", self.current_font_size))
+        self.linenumbers.config(font=("Consolas", self.current_font_size))
+        # Re-render line numbers to adjust spacing/width if needed
+        self._update_line_numbers()
+
 
     def _sync_scroll(self, *args):
         """Synchronizes scrolling between main text, line numbers, and scrollbar."""
@@ -356,7 +405,7 @@ class LogSearchApp(TkinterDnD.Tk):
         else:
             # A robust way to count lines, handling trailing newlines correctly
             total_lines = content.count('\n')
-            if not content.endswith('\n'): # If the last line doesn't have a newline
+            if not content.endswith('\n') and len(content) > 0: # If the last line doesn't have a newline but has content
                 total_lines += 1
             if total_lines == 0 and content: # Case for a single line with content but no newline
                 total_lines = 1
@@ -364,8 +413,15 @@ class LogSearchApp(TkinterDnD.Tk):
 
         line_numbers_text = ""
         if total_lines > 0:
+            # Determine appropriate width for line numbers based on total_lines
+            num_digits = len(str(total_lines))
+            # Set a minimum width (e.g., 3 for single/double digits, 4 for triple, etc.)
+            self.linenumbers.config(width=max(4, num_digits + 1)) 
+
             for i in range(1, total_lines + 1):
                 line_numbers_text += f"{i}\n"
+        else:
+            self.linenumbers.config(width=4) # Default width if no lines
         
         self.linenumbers.insert("1.0", line_numbers_text)
 
@@ -420,7 +476,7 @@ class LogSearchApp(TkinterDnD.Tk):
         
         # Apply theme to all ttk frames
         for frame in [self.main_frame, self.header_frame, self.file_input_frame, 
-                       self.search_frame_container, self.results_frame, self.status_frame]:
+                      self.search_frame_container, self.results_frame, self.status_frame]:
             self.style.configure(frame.winfo_class(), background=theme['bg']) # Update style for the widget class
             frame.configure(style=frame.winfo_class()) # Apply the style
 
@@ -519,6 +575,10 @@ Here's how to use this application:
 
 5.  **Toggle Theme:**
     * Click the "🌙 Dark Mode" / "☀️ Light Mode" button in the top right corner to switch between themes.
+
+6.  **Zoom In/Out:**
+    * Use the "View" menu at the top, then select "Zoom In (+)", "Zoom Out (-)", or "Reset Zoom (100%)".
+    * Alternatively, press `Ctrl` + `+` (or `Ctrl` + `=`) to zoom in, `Ctrl` + `-` to zoom out, and `Ctrl` + `0` (zero) to reset zoom to default.
 
 Enjoy searching your logs!
 """
