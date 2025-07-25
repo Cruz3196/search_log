@@ -245,7 +245,7 @@ class LogSearchApp(TkinterDnD.Tk):
         
         # Header frame with title only (no dark mode toggle button)
         self.header_frame = ttk.Frame(self.main_frame, style="TFrame")
-        self.header_frame.grid(row=0, column=0, columnspan=2, sticky="ew", pady=(0, 10))
+        self.header_frame.grid(row=0, column=0, columnspan=3, sticky="ew", pady=(0, 10)) # Adjusted columnspan
         self.header_frame.grid_columnconfigure(0, weight=1) 
 
         self.drop_label = ttk.Label(
@@ -258,7 +258,7 @@ class LogSearchApp(TkinterDnD.Tk):
         
         # File path entry (no browse button next to it)
         self.file_input_frame = ttk.Frame(self.main_frame, style="TFrame")
-        self.file_input_frame.grid(row=1, column=0, columnspan=2, sticky="ew", pady=5)
+        self.file_input_frame.grid(row=1, column=0, columnspan=3, sticky="ew", pady=5) # Adjusted columnspan
         self.file_input_frame.grid_columnconfigure(0, weight=1)
 
         self.drop_entry = ttk.Entry(self.file_input_frame, font=("Segoe UI", 10), style="TEntry")
@@ -268,7 +268,7 @@ class LogSearchApp(TkinterDnD.Tk):
 
         # Search section
         self.search_frame_container = ttk.Frame(self.main_frame, padding="10 0 10 10", style="TFrame")
-        self.search_frame_container.grid(row=2, column=0, columnspan=2, sticky="ew", pady=10)
+        self.search_frame_container.grid(row=2, column=0, columnspan=3, sticky="ew", pady=10) # Adjusted columnspan
         self.search_frame_container.grid_columnconfigure(0, weight=1)
 
         self.keyword_label = ttk.Label(
@@ -277,7 +277,7 @@ class LogSearchApp(TkinterDnD.Tk):
             font=("Segoe UI", 11, "bold"),
             style="TLabel"
         )
-        self.keyword_label.grid(row=0, column=0, sticky="w", pady=(0, 5))
+        self.keyword_label.grid(row=0, column=0, sticky="w", pady=(0, 5), columnspan=3) # Adjusted columnspan
 
         self.keyword_entry = ttk.Entry(self.search_frame_container, font=("Segoe UI", 10), style="TEntry")
         self.keyword_entry.grid(row=1, column=0, sticky="ew", padx=(0, 5))
@@ -291,9 +291,19 @@ class LogSearchApp(TkinterDnD.Tk):
         )
         self.search_button.grid(row=1, column=1, sticky="e")
 
+        # New: Keyword status indicator
+        self.keyword_status_label = ttk.Label(
+            self.search_frame_container,
+            text="",
+            font=("Segoe UI", 12, "bold"),
+            style="TLabel"
+        )
+        self.keyword_status_label.grid(row=1, column=2, padx=(5, 0), sticky="w")
+
+
         # Results section with scrollbars and line numbers
         self.results_frame = ttk.Frame(self.main_frame, style="TFrame", relief="solid", borderwidth=1)
-        self.results_frame.grid(row=3, column=0, columnspan=2, padx=0, pady=0, sticky="nsew")
+        self.results_frame.grid(row=3, column=0, columnspan=3, padx=0, pady=0, sticky="nsew") # Adjusted columnspan
         self.results_frame.grid_rowconfigure(0, weight=1)
         self.results_frame.grid_columnconfigure(0, weight=0)
         self.results_frame.grid_columnconfigure(1, weight=0)
@@ -333,7 +343,7 @@ class LogSearchApp(TkinterDnD.Tk):
 
         # Status bar
         self.status_frame = ttk.Frame(self.main_frame, style="StatusBar.TFrame", relief="flat", borderwidth=0)
-        self.status_frame.grid(row=4, column=0, columnspan=2, sticky="ew", pady=(5, 0))
+        self.status_frame.grid(row=4, column=0, columnspan=3, sticky="ew", pady=(5, 0)) # Adjusted columnspan
         self.status_frame.grid_columnconfigure(0, weight=1)
 
         self.status_label = ttk.Label(
@@ -482,6 +492,9 @@ class LogSearchApp(TkinterDnD.Tk):
         for label in [self.drop_label, self.keyword_label, self.status_label]:
             label.configure(background=theme['bg'], foreground=theme['fg'])
         
+        # Specific handling for keyword_status_label background
+        self.keyword_status_label.config(background=theme['bg'])
+
         # Text widget
         self.result_text.configure(bg=theme['text_bg'], fg=theme['text_fg'],
                                    insertbackground=theme['fg'], selectbackground=theme['select_bg'])
@@ -558,6 +571,7 @@ Here's how to use this application:
     * Enter the text you want to find in the "Enter keyword to search" field.
     * Click the "Search" button or press Enter.
     * The results will show matching lines from the selected file(s), along with 5 lines before and 5 lines after each match for context.
+    * A green checkmark (✔) will appear if matches are found, or a red cross (✖) if not.
 
 3.  **Open a File (No Search):**
     * If you select a single file and leave the "Enter keyword to search" field blank, clicking "Search" will simply open and display the entire content of that file.
@@ -596,7 +610,7 @@ Enjoy searching your logs!
         # Create find dialog frame within main_frame
         self.search_frame = ttk.Frame(self.main_frame, style="Search.TFrame")
         # Place it at row 0 of main_frame's grid, pushing other content down
-        self.search_frame.grid(row=0, column=0, columnspan=2, sticky="ew", pady=(0, 2), padx=5) 
+        self.search_frame.grid(row=0, column=0, columnspan=3, sticky="ew", pady=(0, 2), padx=5) # Adjusted columnspan
         
         # Shift existing content in main_frame down by one row
         # Iterate through relevant widgets and move them down one row
@@ -619,11 +633,11 @@ Enjoy searching your logs!
             widget.grid_forget()
 
         # Re-grid with new row positions
-        self.header_frame.grid(row=1, column=0, columnspan=2, sticky="ew", pady=(0, 10))
-        self.file_input_frame.grid(row=2, column=0, columnspan=2, sticky="ew", pady=5)
-        self.search_frame_container.grid(row=3, column=0, columnspan=2, sticky="ew", pady=10)
-        self.results_frame.grid(row=4, column=0, columnspan=2, padx=0, pady=0, sticky="nsew")
-        self.status_frame.grid(row=5, column=0, columnspan=2, sticky="ew", pady=(5, 0))
+        self.header_frame.grid(row=1, column=0, columnspan=3, sticky="ew", pady=(0, 10)) # Adjusted columnspan
+        self.file_input_frame.grid(row=2, column=0, columnspan=3, sticky="ew", pady=5) # Adjusted columnspan
+        self.search_frame_container.grid(row=3, column=0, columnspan=3, sticky="ew", pady=10) # Adjusted columnspan
+        self.results_frame.grid(row=4, column=0, columnspan=3, padx=0, pady=0, sticky="nsew") # Adjusted columnspan
+        self.status_frame.grid(row=5, column=0, columnspan=3, sticky="ew", pady=(5, 0)) # Adjusted columnspan
 
         # Re-configure main_frame's grid weights to accommodate the new row 0 for find_frame
         # The new row for results_frame (row 4) now needs to be the one that expands
@@ -683,11 +697,11 @@ Enjoy searching your logs!
             self.results_frame.grid_forget()
             self.status_frame.grid_forget()
 
-            self.header_frame.grid(row=0, column=0, columnspan=2, sticky="ew", pady=(0, 10))
-            self.file_input_frame.grid(row=1, column=0, columnspan=2, sticky="ew", pady=5)
-            self.search_frame_container.grid(row=2, column=0, columnspan=2, sticky="ew", pady=10)
-            self.results_frame.grid(row=3, column=0, columnspan=2, padx=0, pady=0, sticky="nsew")
-            self.status_frame.grid(row=4, column=0, columnspan=2, sticky="ew", pady=(5, 0))
+            self.header_frame.grid(row=0, column=0, columnspan=3, sticky="ew", pady=(0, 10)) # Adjusted columnspan
+            self.file_input_frame.grid(row=1, column=0, columnspan=3, sticky="ew", pady=5) # Adjusted columnspan
+            self.search_frame_container.grid(row=2, column=0, columnspan=3, sticky="ew", pady=10) # Adjusted columnspan
+            self.results_frame.grid(row=3, column=0, columnspan=3, padx=0, pady=0, sticky="nsew") # Adjusted columnspan
+            self.status_frame.grid(row=4, column=0, columnspan=3, sticky="ew", pady=(5, 0)) # Adjusted columnspan
 
             # Re-configure main_frame's grid weights back to original
             self.main_frame.grid_rowconfigure(0, weight=0) # Header row fixed
@@ -795,6 +809,7 @@ Enjoy searching your logs!
         self.drop_entry.insert(0, path)
         self.update_status("File/folder loaded: " + os.path.basename(path))
         self._reset_line_numbers()
+        self.keyword_status_label.config(text="") # Clear status on new file load
 
     def browse_file_or_folder(self):
         """Allows user to browse for a file or folder (now only via menu)"""
@@ -812,8 +827,10 @@ Enjoy searching your logs!
             self.drop_entry.insert(0, path)
             self.update_status("File/folder loaded: " + os.path.basename(path))
             self._reset_line_numbers()
+            self.keyword_status_label.config(text="") # Clear status on new file load
         else:
             self.update_status("File/folder selection cancelled.", False)
+            self.keyword_status_label.config(text="") # Clear status on cancellation
 
     def reset_application_state(self):
         """Resets the application to its initial state."""
@@ -844,6 +861,7 @@ Enjoy searching your logs!
         
         self.reset_zoom() # Reset font size
         self.display_welcome_message() # Show welcome message again
+        self.keyword_status_label.config(text="") # Clear status on reset
         messagebox.showinfo("Reset Complete", "Application has been reset to its initial state.")
 
 
@@ -873,6 +891,16 @@ Enjoy searching your logs!
             self.update_status("Save operation cancelled.", False)
 
 
+    def _update_keyword_status_ui(self, found):
+        """Update the keyword status label with a checkmark or cross."""
+        theme = self.themes['dark' if self.dark_mode else 'light']
+        if found:
+            self.keyword_status_label.config(text="✔", foreground="green")
+        else:
+            self.keyword_status_label.config(text="✖", foreground="red")
+        self.keyword_status_label.config(background=theme['bg']) # Ensure background matches frame
+
+
     def search_logs(self):
         """Start log search or open file in a separate thread"""
         if self.search_thread and self.search_thread.is_alive():
@@ -889,10 +917,12 @@ Enjoy searching your logs!
 
         if not self.dropped_path:
             messagebox.showwarning("Missing Info", "Please drag & drop a file/folder or use the menu to browse.")
+            self.keyword_status_label.config(text="") # Clear status if no path
             return
 
         self.stop_search = False
         self.search_button.config(text="Cancel", state="normal")
+        self.keyword_status_label.config(text="") # Clear previous status
 
         if not keyword and os.path.isfile(self.dropped_path):
             self.search_thread = threading.Thread(target=self._open_file_threaded, args=(self.dropped_path,))
@@ -900,6 +930,7 @@ Enjoy searching your logs!
             messagebox.showwarning("Missing Keyword", "Please enter a keyword to search a directory.")
             self.search_button.config(text="Search", state="normal")
             self.update_status("Ready", False)
+            self._update_keyword_status_ui(False) # No keyword for directory search means "not found"
             return
         else:
             self.search_thread = threading.Thread(target=self._search_logs_threaded, args=(keyword,))
@@ -931,6 +962,7 @@ Enjoy searching your logs!
             self.ui_update_queue.put(lambda: messagebox.showerror("Error", f"Error opening file: {str(e)}"))
         finally:
             self.ui_update_queue.put(lambda: self.search_button.config(text="Search", state="normal"))
+            self.ui_update_queue.put(lambda: self.keyword_status_label.config(text="")) # Clear status for non-keyword open
 
 
     def _search_logs_threaded(self, keyword):
@@ -951,6 +983,7 @@ Enjoy searching your logs!
                 total_files = 1
             else:
                 self.update_status("Invalid file or folder.", False)
+                self._update_keyword_status_ui(False) # Indicate invalid path as "not found"
                 return
             
             self.update_status(f"Searching in {total_files} files...", True, 0)
@@ -980,14 +1013,17 @@ Enjoy searching your logs!
             
             if self.stop_search:
                 self.update_status("Search cancelled", False)
+                self.ui_update_queue.put(lambda: self._update_keyword_status_ui(False)) # Indicate cancelled search as "not found" visually
             else:
                 matches_found = self.result_text.get("1.0", tk.END).count("\n") - 1
                 self.update_status(f"Search complete - {matches_found} lines found", False)
+                self.ui_update_queue.put(lambda: self._update_keyword_status_ui(matched)) # Update status based on actual search result
             
             self.ui_update_queue.put(self._update_line_numbers)
 
         except Exception as e:
             self.ui_update_queue.put(lambda: messagebox.showerror("Error", f"Search error: {str(e)}"))
+            self.ui_update_queue.put(lambda: self._update_keyword_status_ui(False)) # Indicate error as "not found"
         finally:
             self.ui_update_queue.put(lambda: self.search_button.config(text="Search", state="normal"))
 
@@ -1017,8 +1053,8 @@ Enjoy searching your logs!
                     current_start, current_end = context_ranges[0]
                     for i in range(1, len(context_ranges)):
                         next_start, next_end = context_ranges[i]
-                        # If the next range overlaps or is adjacent (+1 for continuity)
-                        if next_start <= current_end + 5: # Changed from +1 to +5 to merge contexts
+                        # If the next range overlaps or is adjacent (+5 for continuity of context)
+                        if next_start <= current_end + 5: 
                             current_end = max(current_end, next_end)
                         else:
                             merged_ranges.append((current_start, current_end))
