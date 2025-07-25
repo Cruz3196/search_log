@@ -109,7 +109,7 @@ class LogSearchApp(TkinterDnD.Tk):
                              gripcount=0, # No grip dots
                              relief="flat")
         self.style.map("Vertical.TScrollbar",
-                       background=[('active', '#aaaaaa')]) # Darker on hover
+                        background=[('active', '#aaaaaa')]) # Darker on hover
 
         # Progressbar style
         self.style.configure("TProgressbar",
@@ -134,6 +134,9 @@ class LogSearchApp(TkinterDnD.Tk):
         file_menu = tk.Menu(menubar, tearoff=0)
         menubar.add_cascade(label="File", menu=file_menu)
         file_menu.add_command(label="Open File/Folder...", command=self.browse_file_or_folder)
+        file_menu.add_command(label="Save Results As...", command=self.save_results_as) # Added Save Results As
+        file_menu.add_separator()
+        file_menu.add_command(label="Reset", command=self.reset_application_state) # Added Reset
         file_menu.add_separator()
         file_menu.add_command(label="Exit", command=self.destroy)
 
@@ -481,11 +484,11 @@ class LogSearchApp(TkinterDnD.Tk):
         
         # Text widget
         self.result_text.configure(bg=theme['text_bg'], fg=theme['text_fg'],
-                                 insertbackground=theme['fg'], selectbackground=theme['select_bg'])
+                                   insertbackground=theme['fg'], selectbackground=theme['select_bg'])
         
         # Line numbers widget
         self.linenumbers.configure(bg=theme['line_num_bg'], fg=theme['line_num_fg'],
-                                 insertbackground=theme['line_num_fg'], selectbackground=theme['select_bg'])
+                                   insertbackground=theme['line_num_fg'], selectbackground=theme['select_bg'])
         self.linenumbers.tag_configure("line", 
                                        foreground=theme['line_num_fg'], 
                                        background=theme['line_num_bg'])
@@ -554,7 +557,7 @@ Here's how to use this application:
 2.  **Search for a Keyword:**
     * Enter the text you want to find in the "Enter keyword to search" field.
     * Click the "Search" button or press Enter.
-    * The results will show matching lines from the selected file(s).
+    * The results will show matching lines from the selected file(s), along with 5 lines before and 5 lines after each match for context.
 
 3.  **Open a File (No Search):**
     * If you select a single file and leave the "Enter keyword to search" field blank, clicking "Search" will simply open and display the entire content of that file.
@@ -569,6 +572,12 @@ Here's how to use this application:
 6.  **Zoom In/Out:**
     * Use the "View" menu at the top, then select "Zoom In (+)", "Zoom Out (-)", or "Reset Zoom (100%)".
     * Alternatively, press `Ctrl` + `+` (or `Ctrl` + `=`) to zoom in, `Ctrl` + `-` to zoom out, and `Ctrl` + `0` (zero) to reset zoom to default.
+
+7.  **Reset Application:**
+    * Go to "File" menu -> "Reset" to clear all inputs, results, and reset the application to its initial state.
+
+8.  **Save Results:**
+    * Go to "File" menu -> "Save Results As..." to save the content currently displayed in the results area to a text file.
 
 Enjoy searching your logs!
 """
@@ -806,6 +815,63 @@ Enjoy searching your logs!
         else:
             self.update_status("File/folder selection cancelled.", False)
 
+    def reset_application_state(self):
+        """Resets the application to its initial state."""
+        if self.search_thread and self.search_thread.is_alive():
+            self.stop_search = True
+            # Wait a bit for the thread to stop, or implement a more robust stop mechanism
+            # For simplicity, we'll just set the flag and let the thread clean up
+            self.update_status("Cancelling current operation before reset...", True, self.progress_var.get())
+            self.after(500, self._perform_reset_after_thread_stop) # Delay reset to allow thread to stop
+        else:
+            self._perform_reset_after_thread_stop()
+
+    def _perform_reset_after_thread_stop(self):
+        """Performs the actual reset after ensuring any running search thread has stopped."""
+        self.drop_entry.delete(0, tk.END)
+        self.keyword_entry.delete(0, tk.END)
+        self.result_text.delete("1.0", tk.END)
+        self._reset_line_numbers()
+        self.update_status("Ready", False)
+        
+        self.dropped_path = ""
+        self.search_matches = []
+        self.current_match_index = -1
+        self.stop_search = False
+        
+        if self.search_frame:
+            self.hide_find_dialog()
+        
+        self.reset_zoom() # Reset font size
+        self.display_welcome_message() # Show welcome message again
+        messagebox.showinfo("Reset Complete", "Application has been reset to its initial state.")
+
+
+    def save_results_as(self):
+        """Saves the content of the result_text widget to a file."""
+        content = self.result_text.get("1.0", tk.END).strip()
+        if not content:
+            messagebox.showwarning("No Content", "There is no content to save in the results area.")
+            return
+
+        file_path = filedialog.asksaveasfilename(
+            defaultextension=".txt",
+            filetypes=[("Text Files", "*.txt"), ("All Files", "*.*")],
+            title="Save Results As"
+        )
+
+        if file_path:
+            try:
+                with open(file_path, "w", encoding="utf-8") as f:
+                    f.write(content)
+                self.update_status(f"Results saved to: {os.path.basename(file_path)}", False)
+                messagebox.showinfo("Save Successful", f"Results successfully saved to:\n{file_path}")
+            except Exception as e:
+                messagebox.showerror("Save Error", f"Failed to save results:\n{e}")
+                self.update_status("Failed to save results.", False)
+        else:
+            self.update_status("Save operation cancelled.", False)
+
 
     def search_logs(self):
         """Start log search or open file in a separate thread"""
@@ -930,16 +996,38 @@ Enjoy searching your logs!
         try:
             with open(file_path, "r", encoding="utf-8", errors="ignore") as file:
                 lines = file.readlines()
-                for idx, line in enumerate(lines, start=1):
+                last_printed_line_idx = -1 # Keep track of the last line index printed for context
+                
+                for idx, line in enumerate(lines):
                     if self.stop_search:
                         break
+                    
                     if keyword.lower() in line.lower():
-                        if not found:
+                        found = True
+                        
+                        # Calculate start and end indices for context lines
+                        start_context_idx = max(0, idx - 5)
+                        end_context_idx = min(len(lines) - 1, idx + 5)
+                        
+                        # Adjust start_context_idx to avoid reprinting lines already covered by a previous match's context
+                        if start_context_idx <= last_printed_line_idx:
+                            start_context_idx = last_printed_line_idx + 1
+                        
+                        # If we are starting a new block (either first match or a new distinct block)
+                        if start_context_idx <= end_context_idx: # Ensure there's content to print
                             self.ui_update_queue.put(lambda fp=file_path: 
-                                self.result_text.insert(tk.END, f"\n--- {fp} ---\n"))
-                            found = True
-                        self.ui_update_queue.put(lambda i=idx, l=line: 
-                            self.result_text.insert(tk.END, f"{i}: {l}"))
+                                self.result_text.insert(tk.END, f"\n--- {fp} (Match at line {idx+1}) ---\n"))
+                            
+                            for i in range(start_context_idx, end_context_idx + 1):
+                                if self.stop_search:
+                                    break
+                                current_line_num = i + 1
+                                current_line_content = lines[i]
+                                self.ui_update_queue.put(lambda ln=current_line_num, lc=current_line_content: 
+                                    self.result_text.insert(tk.END, f"{ln}: {lc}"))
+                            
+                            self.ui_update_queue.put(lambda: self.result_text.insert(tk.END, "---\n")) # Separator for context block
+                            last_printed_line_idx = end_context_idx # Update last printed line index
         except Exception as e:
             self.ui_update_queue.put(lambda fp=file_path, err=e: 
                 self.result_text.insert(tk.END, f"Error reading {fp}: {err}\n"))
