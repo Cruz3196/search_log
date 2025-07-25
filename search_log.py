@@ -996,38 +996,50 @@ Enjoy searching your logs!
         try:
             with open(file_path, "r", encoding="utf-8", errors="ignore") as file:
                 lines = file.readlines()
-                last_printed_line_idx = -1 # Keep track of the last line index printed for context
                 
+                # Collect all relevant line ranges
+                context_ranges = []
                 for idx, line in enumerate(lines):
-                    if self.stop_search:
-                        break
-                    
                     if keyword.lower() in line.lower():
-                        found = True
-                        
-                        # Calculate start and end indices for context lines
                         start_context_idx = max(0, idx - 5)
                         end_context_idx = min(len(lines) - 1, idx + 5)
-                        
-                        # Adjust start_context_idx to avoid reprinting lines already covered by a previous match's context
-                        if start_context_idx <= last_printed_line_idx:
-                            start_context_idx = last_printed_line_idx + 1
-                        
-                        # If we are starting a new block (either first match or a new distinct block)
-                        if start_context_idx <= end_context_idx: # Ensure there's content to print
-                            self.ui_update_queue.put(lambda fp=file_path: 
-                                self.result_text.insert(tk.END, f"\n--- {fp} (Match at line {idx+1}) ---\n"))
-                            
-                            for i in range(start_context_idx, end_context_idx + 1):
-                                if self.stop_search:
-                                    break
-                                current_line_num = i + 1
-                                current_line_content = lines[i]
-                                self.ui_update_queue.put(lambda ln=current_line_num, lc=current_line_content: 
-                                    self.result_text.insert(tk.END, f"{ln}: {lc}"))
-                            
-                            self.ui_update_queue.put(lambda: self.result_text.insert(tk.END, "---\n")) # Separator for context block
-                            last_printed_line_idx = end_context_idx # Update last printed line index
+                        context_ranges.append((start_context_idx, end_context_idx))
+                
+                if not context_ranges:
+                    return False # No matches found in this file
+
+                # Sort ranges by their start index
+                context_ranges.sort()
+
+                # Merge overlapping or adjacent ranges
+                merged_ranges = []
+                if context_ranges:
+                    current_start, current_end = context_ranges[0]
+                    for i in range(1, len(context_ranges)):
+                        next_start, next_end = context_ranges[i]
+                        # If the next range overlaps or is adjacent (+1 for continuity)
+                        if next_start <= current_end + 5: # Changed from +1 to +5 to merge contexts
+                            current_end = max(current_end, next_end)
+                        else:
+                            merged_ranges.append((current_start, current_end))
+                            current_start, current_end = next_start, next_end
+                    merged_ranges.append((current_start, current_end)) # Add the last merged range
+
+                # Print the merged ranges
+                for start_idx, end_idx in merged_ranges:
+                    found = True
+                    self.ui_update_queue.put(lambda fp=file_path, s_idx=start_idx: 
+                        self.result_text.insert(tk.END, f"\n--- {fp} (Context around line {s_idx+1}) ---\n"))
+                    
+                    for i in range(start_idx, end_idx + 1):
+                        if self.stop_search:
+                            break
+                        current_line_num = i + 1
+                        current_line_content = lines[i]
+                        self.ui_update_queue.put(lambda ln=current_line_num, lc=current_line_content: 
+                            self.result_text.insert(tk.END, f"{ln}: {lc}"))
+                    
+                    self.ui_update_queue.put(lambda: self.result_text.insert(tk.END, "---\n")) # Separator for context block
         except Exception as e:
             self.ui_update_queue.put(lambda fp=file_path, err=e: 
                 self.result_text.insert(tk.END, f"Error reading {fp}: {err}\n"))
