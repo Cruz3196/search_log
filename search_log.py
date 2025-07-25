@@ -10,51 +10,51 @@ class LogSearchApp(TkinterDnD.Tk):
     def __init__(self):
         super().__init__()
         self.title("Cruz's Log File Search")
-        self.geometry("1000x700") # Slightly wider to accommodate line numbers
-        self.minsize(700, 500) # Set a minimum size for responsiveness
+        self.geometry("1000x700")
+        self.minsize(700, 500)
         
-        # Theme configuration
-        self.dark_mode = False
+        # Theme configuration - Refined colors for a more modern look
+        self.dark_mode = False # Keep dark_mode for menu control
         self.themes = {
             'light': {
-                'bg': '#f0f0f0', # Lighter background for main window
-                'fg': '#333333',
-                'select_bg': '#b3e0ff', # Softer, more modern light blue for selection
+                'bg': '#f3f3f3',        # General background (lighter than f0f0f0)
+                'fg': '#222222',        # General foreground
+                'select_bg': '#cce8ff', # Softer, more modern light blue for selection
                 'select_fg': '#000000',
                 'entry_bg': '#ffffff',
                 'entry_fg': '#000000',
-                'button_bg': '#e0e0e0',
+                'button_bg': '#e0e0e0', # Subtle button background
                 'button_fg': '#333333',
-                'text_bg': '#ffffff',
+                'text_bg': '#ffffff',   # Main text background
                 'text_fg': '#000000',
-                'highlight': '#ffe680', # Softer yellow for highlight
-                'current_highlight': '#ffc266', # Softer orange for current highlight
-                'find_bg': '#e8e8e8',
-                'status_bg': '#e0e0e0',
-                'border_color': '#dcdcdc', # Softer gray border
-                'line_num_bg': '#e8e8e8', # Background for line numbers
-                'line_num_fg': '#888888',  # Foreground for line numbers
+                'highlight': '#fffacd', # Softer lemon chiffon for highlight
+                'current_highlight': '#ffcc80', # Softer orange for current highlight
+                'find_bg': '#e8e8e8',   # Find dialog background
+                'status_bg': '#e0e0e0', # Status bar background
+                'border_color': '#dcdcdc', # Subtle border for frames
+                'line_num_bg': '#f8f8f8', # Background for line numbers (slightly off-white)
+                'line_num_fg': '#999999', # Foreground for line numbers (soft grey)
                 'separator_bg': '#d0d0d0' # Separator line color
             },
             'dark': {
-                'bg': '#2c2c2c',
-                'fg': '#e0e0e0',
-                'select_bg': '#007acc', # Deeper, richer blue for selection
+                'bg': '#252526',        # General background (VS Code dark)
+                'fg': '#cccccc',        # General foreground
+                'select_bg': '#005f99', # Deeper, richer blue for selection (VS Code blue)
                 'select_fg': '#ffffff',
-                'entry_bg': '#3a3a3a',
-                'entry_fg': '#e0e0e0',
-                'button_bg': '#4a4a4a',
-                'button_fg': '#e0e0e0',
-                'text_bg': '#1e1e1e', # Main text background (darker)
-                'text_fg': '#e0e0e0',
-                'highlight': '#c0c000', # Darker olive for highlight
+                'entry_bg': '#3c3c3c',  # Entry background
+                'entry_fg': '#cccccc',
+                'button_bg': '#4e4e4e', # Button background
+                'button_fg': '#cccccc',
+                'text_bg': '#1e1e1e',   # Main text background (VS Code editor background)
+                'text_fg': '#d4d4d4',   # Main text foreground (VS Code editor foreground)
+                'highlight': '#5f5f00', # Darker olive for highlight
                 'current_highlight': '#e65100', # Deep orange for current highlight
-                'find_bg': '#383838',
-                'status_bg': '#3a3a3a',
-                'border_color': '#4a4a4a',
-                'line_num_bg': '#282828', # Line number background (slightly lighter dark grey)
-                'line_num_fg': '#6a6a6a',  # Foreground for line numbers
-                'separator_bg': '#333333' # Separator line color
+                'find_bg': '#333333',   # Find dialog background
+                'status_bg': '#007acc', # VS Code blue for status bar
+                'border_color': '#4a4a4a', # Darker border
+                'line_num_bg': '#2c2c2c', # Line number background (slightly lighter dark grey)
+                'line_num_fg': '#6a6a6a', # Foreground for line numbers
+                'separator_bg': '#3a3a3a' # Separator line color
             }
         }
         
@@ -65,80 +65,94 @@ class LogSearchApp(TkinterDnD.Tk):
         self.find_entry = None
         self.search_thread = None
         self.stop_search = False
-        self.ui_update_queue = queue.Queue() # Queue for thread-safe UI updates
-        self.current_font_size = 10 # Initial font size for text content
+        self.ui_update_queue = queue.Queue()
+        self.current_font_size = 10 
 
         self.setup_style()
-        self.create_menus() # Call create_menus before create_widgets
+        self.create_menus()
         self.create_widgets()
         self.bind_events()
         self.apply_theme()
-        self.process_queue() # Start processing UI updates from queue
-        self.display_welcome_message() # Display instructions on startup
+        self.process_queue()
+        self.display_welcome_message()
 
     def setup_style(self):
         """Configure ttk styles for modern appearance"""
         self.style = ttk.Style()
         self.style.theme_use('clam') # 'clam' theme provides a good base for customization
         
-        # General button style
+        # General Button style
         self.style.configure("TButton", 
                              font=("Segoe UI", 10), 
                              padding=6, 
-                             relief="flat", 
-                             borderwidth=1)
-        self.style.map("TButton", 
-                       background=[('active', self.themes['light']['select_bg'])],
-                       foreground=[('active', self.themes['light']['select_fg'])])
+                             relief="flat", # Flat buttons
+                             borderwidth=0) # No border
+        # Map button colors to current theme colors in apply_theme
 
         # Entry style
         self.style.configure("TEntry", 
                              font=("Segoe UI", 10), 
-                             padding=5)
+                             padding=5,
+                             relief="flat", # Flat entry fields
+                             borderwidth=1) # Subtle border
 
         # Label style
         self.style.configure("TLabel", 
                              font=("Segoe UI", 10))
 
-        # Scrollbar style
-        self.style.configure("TScrollbar", 
-                             troughcolor=self.themes['light']['bg'], 
-                             background=self.themes['light']['button_bg'],
-                             bordercolor=self.themes['light']['border_color'],
-                             arrowcolor=self.themes['light']['fg'])
-        self.style.map("TScrollbar",
-                       background=[('active', self.themes['light']['select_bg'])])
+        # Scrollbar style (modern, thin scrollbars)
+        self.style.configure("Vertical.TScrollbar", 
+                             troughcolor="", # No trough color, blend with background
+                             background="#888888", # Default scrollbar thumb color
+                             bordercolor="", # No border
+                             arrowcolor="#ffffff", # White arrows
+                             gripcount=0, # No grip dots
+                             relief="flat")
+        self.style.map("Vertical.TScrollbar",
+                       background=[('active', '#aaaaaa')]) # Darker on hover
 
         # Progressbar style
         self.style.configure("TProgressbar",
                              background="#0078d4", # A fixed blue for progress
-                             troughcolor=self.themes['light']['button_bg'],
-                             borderwidth=0)
+                             troughcolor="#e0e0e0", # Lighter trough
+                             borderwidth=0,
+                             relief="flat")
         
         # Frame style (for consistent background)
         self.style.configure("TFrame", background=self.themes['light']['bg'])
+        self.style.configure("Search.TFrame", background=self.themes['light']['find_bg'], relief="solid", borderwidth=1) # For the find bar
         self.style.configure("Separator.TFrame", background=self.themes['light']['separator_bg']) # Style for separator
+        self.style.configure("StatusBar.TFrame", background=self.themes['light']['status_bg'], relief="raised", borderwidth=0)
+
 
     def create_menus(self):
         """Creates the application's menu bar and adds the 'View' menu with zoom actions."""
         menubar = tk.Menu(self)
         self.config(menu=menubar)
 
+        # File Menu
+        file_menu = tk.Menu(menubar, tearoff=0)
+        menubar.add_cascade(label="File", menu=file_menu)
+        file_menu.add_command(label="Open File/Folder...", command=self.browse_file_or_folder)
+        file_menu.add_separator()
+        file_menu.add_command(label="Exit", command=self.destroy)
+
         # View Menu
         view_menu = tk.Menu(menubar, tearoff=0)
         menubar.add_cascade(label="View", menu=view_menu)
 
-        # Zoom In Action
-        view_menu.add_command(label="Zoom In (+)", command=self.zoom_in)
-        
-        # Zoom Out Action
-        view_menu.add_command(label="Zoom Out (-)", command=self.zoom_out)
+        # Theme Submenu (now the primary way to change themes)
+        theme_menu = tk.Menu(view_menu, tearoff=0)
+        view_menu.add_cascade(label="Theme", menu=theme_menu)
+        theme_menu.add_command(label="Light Mode", command=lambda: self.toggle_theme(False))
+        theme_menu.add_command(label="Dark Mode", command=lambda: self.toggle_theme(True))
 
-        # Separator
+
+        # Zoom Actions
+        view_menu.add_command(label="Zoom In (+)", command=self.zoom_in, accelerator="Ctrl++")
+        view_menu.add_command(label="Zoom Out (-)", command=self.zoom_out, accelerator="Ctrl+-")
         view_menu.add_separator()
-
-        # Reset Zoom Action
-        view_menu.add_command(label="Reset Zoom (100%)", command=self.reset_zoom)
+        view_menu.add_command(label="Reset Zoom (100%)", command=self.reset_zoom, accelerator="Ctrl+0")
 
     def configure_light_theme(self):
         """Configure styles for light theme"""
@@ -147,26 +161,34 @@ class LogSearchApp(TkinterDnD.Tk):
                              background=theme['button_bg'], 
                              foreground=theme['button_fg'])
         self.style.map("TButton", 
-                       background=[('active', theme['select_bg'])],
-                       foreground=[('active', theme['select_fg'])])
+                        background=[('active', theme['select_bg'])],
+                        foreground=[('active', theme['select_fg'])])
+
         self.style.configure("TEntry", 
                              background=theme['entry_bg'], 
                              foreground=theme['entry_fg'], 
-                             fieldbackground=theme['entry_bg'])
+                             fieldbackground=theme['entry_bg'],
+                             bordercolor=theme['border_color'])
+        
         self.style.configure("TLabel", 
                              background=theme['bg'], 
                              foreground=theme['fg'])
-        self.style.configure("TScrollbar", 
+        
+        self.style.configure("Vertical.TScrollbar", 
                              troughcolor=theme['bg'], 
                              background=theme['button_bg'],
                              bordercolor=theme['border_color'],
                              arrowcolor=theme['fg'])
-        self.style.map("TScrollbar",
-                       background=[('active', theme['select_bg'])])
+        self.style.map("Vertical.TScrollbar",
+                        background=[('active', theme['select_bg'])])
+        
         self.style.configure("TProgressbar",
                              troughcolor=theme['button_bg'])
+        
         self.style.configure("TFrame", background=theme['bg'])
+        self.style.configure("Search.TFrame", background=theme['find_bg'])
         self.style.configure("Separator.TFrame", background=theme['separator_bg'])
+        self.style.configure("StatusBar.TFrame", background=theme['status_bg'])
 
 
     def configure_dark_theme(self):
@@ -176,87 +198,85 @@ class LogSearchApp(TkinterDnD.Tk):
                              background=theme['button_bg'], 
                              foreground=theme['button_fg'])
         self.style.map("TButton", 
-                       background=[('active', theme['select_bg'])],
-                       foreground=[('active', theme['select_fg'])])
+                        background=[('active', theme['select_bg'])],
+                        foreground=[('active', theme['select_fg'])])
+
         self.style.configure("TEntry", 
                              background=theme['entry_bg'], 
                              foreground=theme['entry_fg'], 
-                             fieldbackground=theme['entry_bg'])
+                             fieldbackground=theme['entry_bg'],
+                             bordercolor=theme['border_color'])
+        
         self.style.configure("TLabel", 
                              background=theme['bg'], 
                              foreground=theme['fg'])
-        self.style.configure("TScrollbar", 
+        
+        self.style.configure("Vertical.TScrollbar", 
                              troughcolor=theme['bg'], 
                              background=theme['button_bg'],
                              bordercolor=theme['border_color'],
                              arrowcolor=theme['fg'])
-        self.style.map("TScrollbar",
-                       background=[('active', theme['select_bg'])])
+        self.style.map("Vertical.TScrollbar",
+                        background=[('active', theme['select_bg'])])
+        
         self.style.configure("TProgressbar",
                              troughcolor=theme['button_bg'])
+        
         self.style.configure("TFrame", background=theme['bg'])
+        self.style.configure("Search.TFrame", background=theme['find_bg'])
         self.style.configure("Separator.TFrame", background=theme['separator_bg'])
+        self.style.configure("StatusBar.TFrame", background=theme['status_bg'])
 
 
     def create_widgets(self):
-        # Main container frame
-        self.main_frame = ttk.Frame(self, padding="10 10 10 10")
-        self.main_frame.pack(fill="both", expand=True)
+        # Main container frame (consistent padding)
+        # Using .grid() for main_frame as well, to allow the find_frame to be gridded at row 0
+        # If main_frame was .packed(), and find_frame was .gridded() into the root, it creates issues.
+        self.main_frame = ttk.Frame(self, padding="10 10 10 10", style="TFrame")
+        self.main_frame.grid(row=0, column=0, sticky="nsew", padx=0, pady=0) # Use grid for main_frame
+        self.grid_rowconfigure(0, weight=1) # Let main_frame expand in root
+        self.grid_columnconfigure(0, weight=1) # Let main_frame expand in root
+
         self.main_frame.grid_rowconfigure(3, weight=1) # Results frame expands vertically
         self.main_frame.grid_columnconfigure(0, weight=1) # Main column expands horizontally
         
-        # Header frame with dark mode toggle and title
-        self.header_frame = ttk.Frame(self.main_frame)
+        # Header frame with title only (no dark mode toggle button)
+        self.header_frame = ttk.Frame(self.main_frame, style="TFrame")
         self.header_frame.grid(row=0, column=0, columnspan=2, sticky="ew", pady=(0, 10))
-        self.header_frame.grid_columnconfigure(0, weight=1) # Label takes most space
+        self.header_frame.grid_columnconfigure(0, weight=1) 
 
         self.drop_label = ttk.Label(
             self.header_frame,
             text="📂 Drag & drop a folder or a .log/.txt/.logcat file:",
-            font=("Segoe UI", 12, "bold")
+            font=("Segoe UI", 12, "bold"),
+            style="TLabel"
         )
         self.drop_label.grid(row=0, column=0, sticky="w")
         
-        # Dark mode toggle button
-        self.theme_button = ttk.Button(
-            self.header_frame,
-            text="🌙 Dark Mode",
-            command=self.toggle_theme,
-            style="TButton"
-        )
-        self.theme_button.grid(row=0, column=1, sticky="e")
-
-        # File path entry and browse button
-        self.file_input_frame = ttk.Frame(self.main_frame)
+        # File path entry (no browse button next to it)
+        self.file_input_frame = ttk.Frame(self.main_frame, style="TFrame")
         self.file_input_frame.grid(row=1, column=0, columnspan=2, sticky="ew", pady=5)
-        self.file_input_frame.grid_columnconfigure(0, weight=1) # Entry takes most space
+        self.file_input_frame.grid_columnconfigure(0, weight=1)
 
-        self.drop_entry = ttk.Entry(self.file_input_frame, font=("Segoe UI", 10))
-        self.drop_entry.grid(row=0, column=0, sticky="ew", padx=(0, 5))
+        self.drop_entry = ttk.Entry(self.file_input_frame, font=("Segoe UI", 10), style="TEntry")
+        self.drop_entry.grid(row=0, column=0, sticky="ew", padx=(0, 0))
         self.drop_entry.drop_target_register(DND_FILES)
         self.drop_entry.dnd_bind("<<Drop>>", self.on_drop)
 
-        self.browse_button = ttk.Button(
-            self.file_input_frame,
-            text="Browse...",
-            command=self.browse_file_or_folder,
-            style="TButton"
-        )
-        self.browse_button.grid(row=0, column=1, sticky="e")
-
         # Search section
-        self.search_frame_container = ttk.Frame(self.main_frame, padding="10 0 10 10")
+        self.search_frame_container = ttk.Frame(self.main_frame, padding="10 0 10 10", style="TFrame")
         self.search_frame_container.grid(row=2, column=0, columnspan=2, sticky="ew", pady=10)
-        self.search_frame_container.grid_columnconfigure(0, weight=1) # Keyword entry expands
+        self.search_frame_container.grid_columnconfigure(0, weight=1)
 
         self.keyword_label = ttk.Label(
             self.search_frame_container,
             text="🔍 Enter keyword to search (or leave blank to open file):",
-            font=("Segoe UI", 11, "bold")
+            font=("Segoe UI", 11, "bold"),
+            style="TLabel"
         )
         self.keyword_label.grid(row=0, column=0, sticky="w", pady=(0, 5))
 
-        self.keyword_entry = ttk.Entry(self.search_frame_container, font=("Segoe UI", 10))
+        self.keyword_entry = ttk.Entry(self.search_frame_container, font=("Segoe UI", 10), style="TEntry")
         self.keyword_entry.grid(row=1, column=0, sticky="ew", padx=(0, 5))
         self.keyword_entry.bind("<Return>", lambda e: self.search_logs())
 
@@ -269,62 +289,59 @@ class LogSearchApp(TkinterDnD.Tk):
         self.search_button.grid(row=1, column=1, sticky="e")
 
         # Results section with scrollbars and line numbers
-        self.results_frame = ttk.Frame(self.main_frame, relief="flat", borderwidth=1)
+        self.results_frame = ttk.Frame(self.main_frame, style="TFrame", relief="solid", borderwidth=1)
         self.results_frame.grid(row=3, column=0, columnspan=2, padx=0, pady=0, sticky="nsew")
         self.results_frame.grid_rowconfigure(0, weight=1)
-        self.results_frame.grid_columnconfigure(0, weight=0) # Line number column fixed width
-        self.results_frame.grid_columnconfigure(1, weight=0) # Separator fixed width
-        self.results_frame.grid_columnconfigure(2, weight=1) # result_text column expands
+        self.results_frame.grid_columnconfigure(0, weight=0)
+        self.results_frame.grid_columnconfigure(1, weight=0)
+        self.results_frame.grid_columnconfigure(2, weight=1)
 
-        # Line numbers Text widget
         self.linenumbers = tk.Text(
             self.results_frame,
-            width=4, # Adjust width as needed for line numbers
+            width=4,
             padx=5,
             pady=10,
-            font=("Consolas", self.current_font_size), # Use current_font_size
+            font=("Consolas", self.current_font_size),
             relief="flat",
             bd=0,
-            state="disabled", # Make it read-only
-            wrap="none" # Do not wrap line numbers
+            state="disabled",
+            wrap="none"
         )
-        self.linenumbers.grid(row=0, column=0, sticky="ns") # Placed to the left
+        self.linenumbers.grid(row=0, column=0, sticky="ns")
 
-        # Vertical separator line (thin frame)
-        self.separator_line = ttk.Frame(self.results_frame, width=1, style="Separator.TFrame") # 1 pixel wide
-        self.separator_line.grid(row=0, column=1, sticky="ns") # Placed between linenumbers and result_text
+        self.separator_line = ttk.Frame(self.results_frame, width=1, style="Separator.TFrame")
+        self.separator_line.grid(row=0, column=1, sticky="ns")
 
         self.result_text = tk.Text(
             self.results_frame, 
             wrap="word", 
-            font=("Consolas", self.current_font_size), # Use current_font_size
-            relief="flat", # Text widget itself should be flat, border handled by frame
+            font=("Consolas", self.current_font_size),
+            relief="flat", 
             bd=0,
             padx=10,
             pady=10
         )
         
-        # Vertical scrollbar
-        self.v_scrollbar = ttk.Scrollbar(self.results_frame, orient="vertical", command=self._sync_scroll)
+        self.v_scrollbar = ttk.Scrollbar(self.results_frame, orient="vertical", command=self._sync_scroll, style="Vertical.TScrollbar")
         self.result_text.configure(yscrollcommand=self.v_scrollbar.set)
         
-        self.result_text.grid(row=0, column=2, sticky="nsew") # result_text moves to column 2
-        self.v_scrollbar.grid(row=0, column=3, sticky="ns") # Placed to the right of result_text
+        self.result_text.grid(row=0, column=2, sticky="nsew")
+        self.v_scrollbar.grid(row=0, column=3, sticky="ns")
 
         # Status bar
-        self.status_frame = ttk.Frame(self.main_frame, relief="flat", borderwidth=1)
+        self.status_frame = ttk.Frame(self.main_frame, style="StatusBar.TFrame", relief="flat", borderwidth=0)
         self.status_frame.grid(row=4, column=0, columnspan=2, sticky="ew", pady=(5, 0))
-        self.status_frame.grid_columnconfigure(0, weight=1) # Status label expands
+        self.status_frame.grid_columnconfigure(0, weight=1)
 
         self.status_label = ttk.Label(
             self.status_frame,
             text="Ready",
             font=("Segoe UI", 9),
-            anchor="w"
+            anchor="w",
+            style="TLabel"
         )
         self.status_label.grid(row=0, column=0, sticky="ew", padx=5, pady=2)
         
-        # Progress bar (initially hidden)
         self.progress_var = tk.DoubleVar()
         self.progress_bar = ttk.Progressbar(
             self.status_frame,
@@ -334,151 +351,129 @@ class LogSearchApp(TkinterDnD.Tk):
             style="TProgressbar"
         )
         self.progress_bar.grid(row=0, column=1, sticky="e", padx=5, pady=2)
-        self.progress_bar.grid_remove() # Hide initially
+        self.progress_bar.grid_remove()
 
-        # Configure text highlighting tags
-        self.result_text.tag_configure("highlight", foreground="black") # Background set in apply_theme
-        self.result_text.tag_configure("current_highlight", foreground="black") # Background set in apply_theme
+        self.result_text.tag_configure("highlight", foreground="black")
+        self.result_text.tag_configure("current_highlight", foreground="black")
 
     def bind_events(self):
-        # Bind Ctrl+F for find functionality
         self.bind("<Control-f>", self.show_find_dialog)
         self.result_text.bind("<Control-f>", self.show_find_dialog)
         
-        # Bind mouse wheel to text widget
         self.result_text.bind("<MouseWheel>", self.on_mousewheel)
-        self.result_text.bind("<Button-4>", self.on_mousewheel) # For Linux
-        self.result_text.bind("<Button-5>", self.on_mousewheel) # For Linux
+        self.result_text.bind("<Button-4>", self.on_mousewheel)
+        self.result_text.bind("<Button-5>", self.on_mousewheel)
 
-        # Bind text modification to update line numbers (using after for debouncing)
-        # This will catch programmatic inserts and user typing.
-        self.result_text.bind("<KeyRelease>", lambda e: self.after(1, self._update_line_numbers))
-        self.result_text.bind("<<Paste>>", lambda e: self.after(1, self._update_line_numbers))
-        self.result_text.bind("<<Cut>>", lambda e: self.after(1, self._update_line_numbers))
+        self.result_text.bind("<<ContentChanged>>", lambda e: self.after_idle(self._update_line_numbers))
+        self.result_text.bind("<KeyRelease>", lambda e: self.result_text.event_generate("<<ContentChanged>>"))
+        self.result_text.bind("<<Paste>>", lambda e: self.result_text.event_generate("<<ContentChanged>>"))
+        self.result_text.bind("<<Cut>>", lambda e: self.result_text.event_generate("<<ContentChanged>>"))
+        self.result_text.bind("<Configure>", lambda e: self.after_idle(self._update_line_numbers))
 
-        # Bind zoom shortcuts
         self.bind("<Control-plus>", self.zoom_in)
-        self.bind("<Control-equal>", self.zoom_in) # For keyboards where '+' is Shift+'='
+        self.bind("<Control-equal>", self.zoom_in)
         self.bind("<Control-minus>", self.zoom_out)
-        self.bind("<Control-0>", self.reset_zoom) # Optional: Reset zoom to default
+        self.bind("<Control-0>", self.reset_zoom)
 
     def zoom_in(self, event=None):
-        if self.current_font_size < 30: # Max font size
+        if self.current_font_size < 30:
             self.current_font_size += 1
             self._update_font_size()
 
     def zoom_out(self, event=None):
-        if self.current_font_size > 8: # Min font size
+        if self.current_font_size > 8:
             self.current_font_size -= 1
             self._update_font_size()
 
     def reset_zoom(self, event=None):
-        self.current_font_size = 10 # Default font size
+        self.current_font_size = 10
         self._update_font_size()
 
     def _update_font_size(self):
-        """Updates the font size of the text and line number widgets."""
         self.result_text.config(font=("Consolas", self.current_font_size))
         self.linenumbers.config(font=("Consolas", self.current_font_size))
-        # Re-render line numbers to adjust spacing/width if needed
         self._update_line_numbers()
 
 
     def _sync_scroll(self, *args):
-        """Synchronizes scrolling between main text, line numbers, and scrollbar."""
         self.result_text.yview(*args)
         self.linenumbers.yview(*args)
-        # After scrolling, ensure line numbers are visually aligned and updated if needed.
-        self._update_line_numbers()
+        self.after_idle(self._update_line_numbers)
 
 
     def _update_line_numbers(self):
-        """Updates the line numbers in the linenumbers Text widget."""
         theme = self.themes['dark' if self.dark_mode else 'light']
         self.linenumbers.config(state="normal")
         self.linenumbers.delete("1.0", tk.END)
 
-        # Get the total number of lines in the main text widget
-        content = self.result_text.get("1.0", tk.END)
-        if not content.strip(): # If content is empty or just whitespace
-            total_lines = 0
-        else:
-            # A robust way to count lines, handling trailing newlines correctly
-            total_lines = content.count('\n')
-            if not content.endswith('\n') and len(content) > 0: # If the last line doesn't have a newline but has content
-                total_lines += 1
-            if total_lines == 0 and content: # Case for a single line with content but no newline
-                total_lines = 1
-
+        content = self.result_text.get("1.0", "end-1c") 
+        total_lines = content.count('\n') + 1 if content else 0
 
         line_numbers_text = ""
         if total_lines > 0:
-            # Determine appropriate width for line numbers based on total_lines
             num_digits = len(str(total_lines))
-            # Set a minimum width (e.g., 3 for single/double digits, 4 for triple, etc.)
             self.linenumbers.config(width=max(4, num_digits + 1)) 
 
             for i in range(1, total_lines + 1):
                 line_numbers_text += f"{i}\n"
         else:
-            self.linenumbers.config(width=4) # Default width if no lines
+            self.linenumbers.config(width=4) 
         
         self.linenumbers.insert("1.0", line_numbers_text)
 
-        # Apply styling
         self.linenumbers.tag_configure("line", 
                                        justify='right', 
                                        foreground=theme['line_num_fg'], 
                                        background=theme['line_num_bg'])
         self.linenumbers.tag_add("line", "1.0", "end")
         
-        # Synchronize scroll positions
         self.linenumbers.yview_moveto(self.result_text.yview()[0])
-        
         self.linenumbers.config(state="disabled")
 
-
     def _reset_line_numbers(self):
-        """Clears the line numbers and resets the widget."""
         self.linenumbers.config(state="normal")
         self.linenumbers.delete("1.0", tk.END)
         self.linenumbers.config(state="disabled")
-        # Ensure scroll position is reset too
         self.linenumbers.yview_moveto(0)
 
     def on_mousewheel(self, event):
-        """Handle mouse wheel scrolling and synchronize."""
-        if event.num == 4: # Linux scroll up
+        if event.num == 4:
             self._sync_scroll("scroll", -1, "units")
-        elif event.num == 5: # Linux scroll down
+        elif event.num == 5:
             self._sync_scroll("scroll", 1, "units")
-        else: # Windows/macOS
+        else:
             self._sync_scroll("scroll", int(-1*(event.delta/120)), "units")
 
-    def toggle_theme(self):
-        """Toggle between light and dark themes"""
-        self.dark_mode = not self.dark_mode
+    def toggle_theme(self, force_dark=None):
+        if force_dark is not None:
+            self.dark_mode = force_dark
+        else:
+            self.dark_mode = not self.dark_mode
+            
         if self.dark_mode:
             self.configure_dark_theme()
-            self.theme_button.config(text="☀️ Light Mode")
         else:
             self.configure_light_theme()
-            self.theme_button.config(text="🌙 Dark Mode")
         self.apply_theme()
-        self._update_line_numbers() # Reapply line number theme and update content
+        self._update_line_numbers()
 
     def apply_theme(self):
-        """Apply the current theme to all widgets"""
         theme = self.themes['dark' if self.dark_mode else 'light']
         
-        # Main window background
         self.configure(bg=theme['bg'])
         
-        # Apply theme to all ttk frames
+        # Apply theme to all ttk frames (iterate through widgets to apply styles)
+        # Ensure 'Search.TFrame' is explicitly handled if it exists
         for frame in [self.main_frame, self.header_frame, self.file_input_frame, 
-                      self.search_frame_container, self.results_frame, self.status_frame]:
-            self.style.configure(frame.winfo_class(), background=theme['bg']) # Update style for the widget class
-            frame.configure(style=frame.winfo_class()) # Apply the style
+                      self.search_frame_container, self.results_frame]:
+            frame.configure(style="TFrame") # Reapply TFrame style
+        
+        # Specific frame styles
+        self.status_frame.configure(style="StatusBar.TFrame")
+        self.separator_line.configure(style="Separator.TFrame")
+        if self.search_frame: # Only apply if search_frame exists
+            self.search_frame.configure(style="Search.TFrame")
+
 
         # Labels
         for label in [self.drop_label, self.keyword_label, self.status_label]:
@@ -486,20 +481,16 @@ class LogSearchApp(TkinterDnD.Tk):
         
         # Text widget
         self.result_text.configure(bg=theme['text_bg'], fg=theme['text_fg'],
-                                   insertbackground=theme['fg'], selectbackground=theme['select_bg'])
+                                 insertbackground=theme['fg'], selectbackground=theme['select_bg'])
         
         # Line numbers widget
         self.linenumbers.configure(bg=theme['line_num_bg'], fg=theme['line_num_fg'],
-                                   insertbackground=theme['line_num_fg'], selectbackground=theme['select_bg'])
+                                 insertbackground=theme['line_num_fg'], selectbackground=theme['select_bg'])
         self.linenumbers.tag_configure("line", 
                                        foreground=theme['line_num_fg'], 
                                        background=theme['line_num_bg'])
 
-        # Separator line
-        self.separator_line.configure(style="Separator.TFrame")
-
-
-        # Update highlighting colors (Text widget tags are not ttk styles)
+        # Update highlighting colors
         self.result_text.tag_configure("highlight", background=theme['highlight'], foreground=theme['text_fg'])
         self.result_text.tag_configure("current_highlight", background=theme['current_highlight'], foreground=theme['text_fg'])
         
@@ -511,9 +502,8 @@ class LogSearchApp(TkinterDnD.Tk):
         """Update find dialog theme"""
         theme = self.themes['dark' if self.dark_mode else 'light']
         
-        self.search_frame.configure(background=theme['find_bg'])
+        self.search_frame.configure(style="Search.TFrame") # Apply specific style for search frame
         
-        # Update all widgets in search frame
         for widget in self.search_frame.winfo_children():
             if isinstance(widget, ttk.Label):
                 widget.configure(background=theme['find_bg'], foreground=theme['fg'])
@@ -532,10 +522,10 @@ class LogSearchApp(TkinterDnD.Tk):
         self.status_label.config(text=message)
         
         if show_progress:
-            self.progress_bar.grid() # Show progress bar
+            self.progress_bar.grid()
             self.progress_var.set(progress_value)
         else:
-            self.progress_bar.grid_remove() # Hide progress bar
+            self.progress_bar.grid_remove()
         
         self.update_idletasks()
 
@@ -548,7 +538,7 @@ class LogSearchApp(TkinterDnD.Tk):
         except queue.Empty:
             pass
         finally:
-            self.after(100, self.process_queue) # Check queue every 100ms
+            self.after(100, self.process_queue)
 
     def display_welcome_message(self):
         """Displays a welcome message with instructions in the result_text area."""
@@ -559,7 +549,7 @@ Here's how to use this application:
 
 1.  **Select a File/Folder:**
     * **Drag & Drop:** Drag a log file (.log, .txt, .syslog, logcat) or a folder containing log files directly onto the "Drag & drop" entry field above.
-    * **Browse Button:** Click the "Browse..." button to manually select a file or folder using your system's file explorer.
+    * **Menu:** Use the "File" menu -> "Open File/Folder..." to manually select a file or folder.
 
 2.  **Search for a Keyword:**
     * Enter the text you want to find in the "Enter keyword to search" field.
@@ -574,7 +564,7 @@ Here's how to use this application:
     * Type your search term, and navigate through matches using "Previous" and "Next" buttons.
 
 5.  **Toggle Theme:**
-    * Click the "🌙 Dark Mode" / "☀️ Light Mode" button in the top right corner to switch between themes.
+    * Use the "View" menu -> "Theme" to switch between Light and Dark modes.
 
 6.  **Zoom In/Out:**
     * Use the "View" menu at the top, then select "Zoom In (+)", "Zoom Out (-)", or "Reset Zoom (100%)".
@@ -584,19 +574,57 @@ Enjoy searching your logs!
 """
         self.result_text.delete("1.0", tk.END)
         self.result_text.insert(tk.END, welcome_text)
-        self._update_line_numbers() # Update line numbers for the welcome message
-        self.result_text.see("1.0") # Scroll to the top of the message
+        self._update_line_numbers()
+        self.result_text.see("1.0")
 
 
     def show_find_dialog(self, event=None):
         if self.search_frame:
-            self.search_frame.destroy()
+            # If already open, just focus the entry
+            self.find_entry.focus_set()
+            return
 
-        # Create find dialog frame
-        theme = self.themes['dark' if self.dark_mode else 'light']
-        self.search_frame = ttk.Frame(self.main_frame, style="TFrame", relief="raised", borderwidth=1)
-        self.search_frame.grid(row=0, column=0, columnspan=2, sticky="ew", pady=(0, 2), padx=5) # Place it at the top
-        self.search_frame.grid_columnconfigure(1, weight=1) # Entry takes most space
+        # Create find dialog frame within main_frame
+        self.search_frame = ttk.Frame(self.main_frame, style="Search.TFrame")
+        # Place it at row 0 of main_frame's grid, pushing other content down
+        self.search_frame.grid(row=0, column=0, columnspan=2, sticky="ew", pady=(0, 2), padx=5) 
+        
+        # Shift existing content in main_frame down by one row
+        # Iterate through relevant widgets and move them down one row
+        # This is the crucial part to make the find bar appear 'on top'
+        
+        # Need to temporarily ungrid all widgets below row 0, then re-grid them
+        # one row lower. This is a bit manual but necessary for a precise layout.
+        
+        # Store current widget positions and move them
+        widgets_to_move = [
+            (self.header_frame, 1), # Original row 0, moves to new row 1
+            (self.file_input_frame, 2), # Original row 1, moves to new row 2
+            (self.search_frame_container, 3), # Original row 2, moves to new row 3
+            (self.results_frame, 4), # Original row 3, moves to new row 4
+            (self.status_frame, 5) # Original row 4, moves to new row 5
+        ]
+
+        # Ungrid to prevent conflicts
+        for widget, _ in widgets_to_move:
+            widget.grid_forget()
+
+        # Re-grid with new row positions
+        self.header_frame.grid(row=1, column=0, columnspan=2, sticky="ew", pady=(0, 10))
+        self.file_input_frame.grid(row=2, column=0, columnspan=2, sticky="ew", pady=5)
+        self.search_frame_container.grid(row=3, column=0, columnspan=2, sticky="ew", pady=10)
+        self.results_frame.grid(row=4, column=0, columnspan=2, padx=0, pady=0, sticky="nsew")
+        self.status_frame.grid(row=5, column=0, columnspan=2, sticky="ew", pady=(5, 0))
+
+        # Re-configure main_frame's grid weights to accommodate the new row 0 for find_frame
+        # The new row for results_frame (row 4) now needs to be the one that expands
+        self.main_frame.grid_rowconfigure(0, weight=0) # Find bar row fixed
+        self.main_frame.grid_rowconfigure(1, weight=0) # Header row fixed
+        self.main_frame.grid_rowconfigure(2, weight=0) # File input row fixed
+        self.main_frame.grid_rowconfigure(3, weight=0) # Keyword search row fixed
+        self.main_frame.grid_rowconfigure(4, weight=1) # Results frame expands vertically
+        self.main_frame.grid_rowconfigure(5, weight=0) # Status bar row fixed
+
 
         ttk.Label(self.search_frame, text="Find:", style="TLabel").grid(row=0, column=0, padx=5, pady=2, sticky="w")
         
@@ -606,7 +634,6 @@ Enjoy searching your logs!
         self.find_entry.bind("<Return>", self.find_next)
         self.find_entry.bind("<Escape>", self.hide_find_dialog)
 
-        # Navigation buttons
         self.prev_button = ttk.Button(
             self.search_frame, text="Previous", command=self.find_previous,
             style="TButton", state="disabled", width=8
@@ -619,28 +646,48 @@ Enjoy searching your logs!
         )
         self.next_button.grid(row=0, column=3, padx=2, pady=2)
 
-        # Match count label
         self.match_label = ttk.Label(
             self.search_frame, text="", style="TLabel"
         )
         self.match_label.grid(row=0, column=4, padx=5, pady=2, sticky="w")
 
-        # Close button
         close_button = ttk.Button(
             self.search_frame, text="✕", command=self.hide_find_dialog,
             style="TButton", width=3
         )
         close_button.grid(row=0, column=5, padx=5, pady=2, sticky="e")
 
-        # Ensure theme is applied to new widgets
+        self.search_frame.grid_columnconfigure(1, weight=1) # Allow entry to expand
+
         self.update_find_dialog_theme()
-        # Focus on the entry
         self.find_entry.focus_set()
 
     def hide_find_dialog(self, event=None):
         if self.search_frame:
             self.search_frame.destroy()
             self.search_frame = None
+            
+            # Revert widget positions back to their original rows
+            self.header_frame.grid_forget()
+            self.file_input_frame.grid_forget()
+            self.search_frame_container.grid_forget()
+            self.results_frame.grid_forget()
+            self.status_frame.grid_forget()
+
+            self.header_frame.grid(row=0, column=0, columnspan=2, sticky="ew", pady=(0, 10))
+            self.file_input_frame.grid(row=1, column=0, columnspan=2, sticky="ew", pady=5)
+            self.search_frame_container.grid(row=2, column=0, columnspan=2, sticky="ew", pady=10)
+            self.results_frame.grid(row=3, column=0, columnspan=2, padx=0, pady=0, sticky="nsew")
+            self.status_frame.grid(row=4, column=0, columnspan=2, sticky="ew", pady=(5, 0))
+
+            # Re-configure main_frame's grid weights back to original
+            self.main_frame.grid_rowconfigure(0, weight=0) # Header row fixed
+            self.main_frame.grid_rowconfigure(1, weight=0) # File input row fixed
+            self.main_frame.grid_rowconfigure(2, weight=0) # Keyword search row fixed
+            self.main_frame.grid_rowconfigure(3, weight=1) # Results frame expands vertically
+            self.main_frame.grid_rowconfigure(4, weight=0) # Status bar row fixed
+
+
         self.clear_highlights()
 
     def on_find_text_change(self, event=None):
@@ -649,18 +696,16 @@ Enjoy searching your logs!
             self.highlight_all_matches(search_text)
         else:
             self.clear_highlights()
-        self.update_match_navigation() # Update navigation buttons and count
+        self.update_match_navigation()
 
     def highlight_all_matches(self, search_text):
-        # Clear previous highlights
         self.clear_highlights()
         self.search_matches = []
-        self.current_match_index = -1 # Reset index when re-highlighting
+        self.current_match_index = -1
         
         if not search_text:
             return
 
-        # Find all matches
         content = self.result_text.get("1.0", tk.END)
         start_pos = "1.0"
         
@@ -675,7 +720,6 @@ Enjoy searching your logs!
             
             start_pos = end_pos
 
-        # Highlight the first match if any
         if self.search_matches:
             self.current_match_index = 0
             self.highlight_current_match()
@@ -685,7 +729,7 @@ Enjoy searching your logs!
         self.result_text.tag_remove("current_highlight", "1.0", tk.END)
         self.search_matches = []
         self.current_match_index = -1
-        if self.search_frame: # Update match label when highlights are cleared
+        if self.search_frame:
             self.match_label.config(text="")
             self.prev_button.config(state="disabled")
             self.next_button.config(state="disabled")
@@ -704,21 +748,19 @@ Enjoy searching your logs!
         else:
             current_display = self.current_match_index + 1 if self.current_match_index >= 0 else 0
             self.match_label.config(text=f"{current_display} of {match_count}")
-            self.prev_button.config(state="normal" if match_count > 1 else "disabled")
-            self.next_button.config(state="normal" if match_count > 1 else "disabled")
+            self.prev_button.config(state="normal" if match_count > 0 else "disabled")
+            self.next_button.config(state="normal" if match_count > 0 else "disabled")
+
 
     def highlight_current_match(self):
         if not self.search_matches:
             return
 
-        # Remove previous current highlight
         self.result_text.tag_remove("current_highlight", "1.0", tk.END)
         
-        # Add current highlight to the current match
         start_pos, end_pos = self.search_matches[self.current_match_index]
         self.result_text.tag_add("current_highlight", start_pos, end_pos)
         
-        # Scroll to the current match
         self.result_text.see(start_pos)
 
     def find_next(self, event=None):
@@ -738,34 +780,30 @@ Enjoy searching your logs!
         self.update_match_navigation()
 
     def on_drop(self, event):
-        path = event.data.strip().strip("{}")  # Removes curly braces if path has spaces
+        path = event.data.strip().strip("{}")
         self.dropped_path = path
         self.drop_entry.delete(0, tk.END)
         self.drop_entry.insert(0, path)
         self.update_status("File/folder loaded: " + os.path.basename(path))
-        self._reset_line_numbers() # Clear line numbers on new file/folder load
+        self._reset_line_numbers()
 
     def browse_file_or_folder(self):
-        """Allows user to browse for a file or folder"""
-        # First, try to open a file dialog
+        """Allows user to browse for a file or folder (now only via menu)"""
         path = filedialog.askopenfilename(
             title="Select a Log File",
-            filetypes=[("Log Files", "*.log *.txt *.syslog"), ("All Files", "*.*")]
+            filetypes=[("Log Files", "*.log *.txt *.syslog *.logcat"), ("All Files", "*.*")]
         )
         
-        # If no file was selected (user clicked cancel), then try to open a directory dialog
         if not path: 
             path = filedialog.askdirectory(title="Select a Log Folder")
 
-        # Only update if a path was actually selected (not an empty string from cancellation)
         if path:
             self.dropped_path = path
             self.drop_entry.delete(0, tk.END)
             self.drop_entry.insert(0, path)
             self.update_status("File/folder loaded: " + os.path.basename(path))
-            self._reset_line_numbers() # Clear line numbers on new file/folder load
+            self._reset_line_numbers()
         else:
-            # If both dialogs were cancelled, update status to reflect no selection
             self.update_status("File/folder selection cancelled.", False)
 
 
@@ -778,30 +816,26 @@ Enjoy searching your logs!
         
         keyword = self.keyword_entry.get().strip()
         self.result_text.delete("1.0", tk.END)
-        self._reset_line_numbers() # Clear line numbers before new content
+        self._reset_line_numbers()
         
-        # Clear find dialog if open
         if self.search_frame:
             self.hide_find_dialog()
 
         if not self.dropped_path:
-            messagebox.showwarning("Missing Info", "Please drop a file/folder or browse.")
+            messagebox.showwarning("Missing Info", "Please drag & drop a file/folder or use the menu to browse.")
             return
 
         self.stop_search = False
         self.search_button.config(text="Cancel", state="normal")
 
         if not keyword and os.path.isfile(self.dropped_path):
-            # If no keyword and it's a single file, open the file
             self.search_thread = threading.Thread(target=self._open_file_threaded, args=(self.dropped_path,))
         elif not keyword and os.path.isdir(self.dropped_path):
-            # If no keyword and it's a directory, warn the user
             messagebox.showwarning("Missing Keyword", "Please enter a keyword to search a directory.")
             self.search_button.config(text="Search", state="normal")
             self.update_status("Ready", False)
             return
         else:
-            # Otherwise, perform a search
             self.search_thread = threading.Thread(target=self._search_logs_threaded, args=(keyword,))
         
         self.search_thread.start()
@@ -816,7 +850,6 @@ Enjoy searching your logs!
                 for idx, line in enumerate(lines):
                     if self.stop_search:
                         break
-                    # Use a lambda to ensure line numbers are updated after each insert
                     self.ui_update_queue.put(lambda l=line: self.result_text.insert(tk.END, l))
                     progress = (idx / total_lines) * 100
                     self.update_status(f"Opening... {idx}/{total_lines} lines", True, progress)
@@ -826,7 +859,6 @@ Enjoy searching your logs!
             else:
                 self.update_status(f"File '{os.path.basename(file_path)}' opened. Total lines: {total_lines}", False)
             
-            # Ensure line numbers are fully updated after all content is inserted
             self.ui_update_queue.put(self._update_line_numbers)
 
         except Exception as e:
@@ -846,9 +878,8 @@ Enjoy searching your logs!
             if os.path.isdir(self.dropped_path):
                 for root, _, files in os.walk(self.dropped_path):
                     for file in files:
-                        if (file.lower().endswith((".log", ".txt", ".syslog"))
-                            or file.lower().startswith("logcat.")
-                            or file.lower() == "logcat"):
+                        if (file.lower().endswith((".log", ".txt", ".syslog", ".logcat"))
+                            or file.lower().startswith("logcat.")):
                             total_files += 1
             elif os.path.isfile(self.dropped_path):
                 total_files = 1
@@ -865,9 +896,8 @@ Enjoy searching your logs!
                     for file in files:
                         if self.stop_search:
                             break
-                        if (file.lower().endswith((".log", ".txt", ".syslog"))
-                            or file.lower().startswith("logcat.")
-                            or file.lower() == "logcat"):
+                        if (file.lower().endswith((".log", ".txt", ".syslog", ".logcat"))
+                            or file.lower().startswith("logcat.")):
                             file_path = os.path.join(root, file)
                             matched |= self.search_file(file_path, keyword)
                             processed_files += 1
@@ -885,10 +915,9 @@ Enjoy searching your logs!
             if self.stop_search:
                 self.update_status("Search cancelled", False)
             else:
-                matches_found = self.result_text.get("1.0", tk.END).count("\n") - 1 # Exclude the initial blank line
+                matches_found = self.result_text.get("1.0", tk.END).count("\n") - 1
                 self.update_status(f"Search complete - {matches_found} lines found", False)
             
-            # Ensure line numbers are fully updated after all content is inserted
             self.ui_update_queue.put(self._update_line_numbers)
 
         except Exception as e:
@@ -904,7 +933,7 @@ Enjoy searching your logs!
                 for idx, line in enumerate(lines, start=1):
                     if self.stop_search:
                         break
-                    if keyword.lower() in line.lower(): # Case-insensitive search
+                    if keyword.lower() in line.lower():
                         if not found:
                             self.ui_update_queue.put(lambda fp=file_path: 
                                 self.result_text.insert(tk.END, f"\n--- {fp} ---\n"))
